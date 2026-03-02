@@ -2,6 +2,7 @@
 The symbiote for your AI agent.
 ---
 Plan:
+Please note: Cross-platform compat isnt required, just get Linux (Systemd) working
 - [ ] Base daemon / service for AI comms (High prio)
    - [ ] Provider agnostic interface (Take inspo from Xenon or JarvisCore)
    - [ ] Basic model features
