@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/coredaemon"
+    },
+    {
+      "path": "./packages/types"
+    }
+  ]
+}
