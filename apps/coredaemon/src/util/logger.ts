@@ -2,14 +2,10 @@ import fs from "node:fs"
 import path from "node:path"
 import os from "node:os"
 import winston from "winston"
-import { AppConfig } from "@symbiote/types"
-
+import { appConfig as config } from "./llm/config.js"
 export function createLogger(): winston.Logger {
   const transports: winston.transport[] = []
-  const cwd = process.cwd()
-  const configFile = path.join(cwd, "../../config.json")
-  const config = JSON.parse(fs.readFileSync(configFile, "utf-8")) as AppConfig
-
+  
   if (config.logging.console.enabled) {
     transports.push(
       new winston.transports.Console({

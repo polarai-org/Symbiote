@@ -14,7 +14,10 @@
     "tsx": "^4.20.5"
   },
   "dependencies": {
+    "@fastify/websocket": "^11.2.0",
     "@symbiote/types": "workspace:*",
+    "fastify": "^5.8.4",
+    "openai": "^6.33.0",
     "winston": "^3.19.0"
   }
 }
