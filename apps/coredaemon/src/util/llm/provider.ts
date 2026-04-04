@@ -1,37 +1,25 @@
-import { LLMMessage, Event } from "@symbiote/types";
+import { ChatMessage, Event, Function } from "@symbiote/types";
 import { OpenAIProvider } from "./openai/provider.js";
-
-export type LLMFunctionParam = {
-  description: string;
-  type: "string" | "number" | "boolean" | "object";
-}
-
-export type LLMFunction = {
-  name: string;
-  description: string;
-  parameters: Record<string, LLMFunctionParam>;
-  requiredParams: string[];
-}
 
 export type LLMProvider = {
   friendlyName: string;
   processChatCompletion:
-  (messages: LLMMessage[], functions?: LLMFunction[]) => AsyncGenerator<Event>;
+  (messages: ChatMessage[]) => AsyncGenerator<Event>;
 }
 
 export type LLMProviderConfig = {
-  functions: LLMFunction[];
+  functions: Function[];
 }
 
-export function getLLMProvider(
-  providerName: string,
-  functions: LLMFunction[] = []): LLMProvider {
-  switch (providerName) {
-    case "openai":
-      return new OpenAIProvider({
-        functions,
-      });
-    default:
-      throw new Error(`Unknown LLM provider: ${providerName}`)
-  }
+export function getLLMProvider(providerName: string, functions: Function[] = []): Promise<LLMProvider> {
+  return new Promise((resolve, reject) => {
+    switch (providerName) {
+      case "openai":
+        return resolve(new OpenAIProvider({
+          functions,
+        }))
+      default:
+        reject(new Error(`Unknown LLM provider: ${providerName}`))
+    }
+  })
 }

@@ -1,17 +1,29 @@
-import { LLMMessage, Event } from "@symbiote/types";
-import { LLMProvider, LLMFunction, LLMProviderConfig } from "../provider.js";
+import { ChatMessage, Event, Function } from "@symbiote/types";
+import { LLMProvider, LLMProviderConfig } from "../provider.js";
 import OpenAI from "openai";
-import { appConfig } from "../config.js";
+import { appConfig } from "../../config.js";
 
-function toResponsesInput(messages: LLMMessage[]) {
-  return messages.map((message) => ({
-    type: "message" as const,
-    role: message.role === "system" ? "developer" as const : message.role,
-    content: message.content,
-  }));
+function toOAIResponsesInput(messages: ChatMessage[]) {
+  return messages.map((message) => {
+    if ((message as { type?: string }).type === "function_call_output") {
+      return message
+    }
+
+    const chatMessage = message as Extract<ChatMessage, {
+      role: "system" | "developer" | "user" | "assistant"
+    }>
+
+    const role = chatMessage.role === "system" ? "developer" as const : chatMessage.role
+
+    return {
+      type: "message" as const,
+      role,
+      content: chatMessage.content,
+    }
+  });
 }
 
-function toOAIResponsesTools(functions: LLMFunction[]) {
+function toOAIResponsesTools(functions: Function[]) {
   return functions.map((func) => ({
     type: "function" as const,
     name: func.name,
@@ -30,7 +42,7 @@ export class OpenAIProvider implements LLMProvider {
   friendlyName: string;
   private client: OpenAI;
   private model: string;
-  private functions: LLMFunction[];
+  private functions: Function[];
   private temperature: number;
 
   constructor({
@@ -47,18 +59,17 @@ export class OpenAIProvider implements LLMProvider {
   }
 
   async *processChatCompletion(
-    messages: LLMMessage[],
-    functions?: LLMFunction[]
+    messages: ChatMessage[],
   ): AsyncGenerator<Event> {
-    const input = toResponsesInput(messages);
-    const oaiFunctions = toOAIResponsesTools(functions || this.functions);
+    const input = toOAIResponsesInput(messages);
+    const oaiFunctions = toOAIResponsesTools(this.functions);
 
     const stream = this.client.responses.stream({
       model: this.model,
       input,
       ...(oaiFunctions.length ? { tools: oaiFunctions } : {}),
       stream: true,
-      temperature: this.temperature,
+      temperature: (this.temperature || undefined),
     });
 
     for await (const part of stream) {
@@ -87,12 +98,14 @@ export class OpenAIProvider implements LLMProvider {
         continue;
       }
 
-      if (part.type === "response.function_call_arguments.delta") {
+      if (part.type === "response.output_item.done" && part.item.type === "function_call") {
         yield {
           name: "llm.function_call",
           data: {
-            delta: part.delta,
-            item_id: part.item_id,
+            call_id: part.item.call_id,
+            name: part.item.name,
+            arguments: part.item.arguments,
+            item_id: part.item.id ?? part.item.call_id,
             output_index: part.output_index,
           },
         };

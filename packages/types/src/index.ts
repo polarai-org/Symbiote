@@ -4,7 +4,7 @@ export type AppConfig = {
     host: string
   },
   llm: {
-    name: string
+    provider_name: string
     base_url: string
     api_key: string
     model_name: string,
@@ -19,51 +19,66 @@ export type AppConfig = {
     console: {
       enabled: boolean
     }
-  }
+  },
+  functions: Record<string, {
+    enabled: boolean
+    provider?: string
+    api_key?: string
+  }>;
 }
 
-export type LLMMessage =
+export type ChatMessage =
   | {
-    role: "system" | "developer" | "user";
+    role: "system" | "developer" | "user" | "assistant";
     content: string;
     name?: string
   }
-
-export type LLMResponseEventData = {
-  delta: string;
-  item_id: string;
-  output_index: number;
-}
-
-export type LLMThinkEventData = LLMResponseEventData & {
-  content_index: number;
-}
-
-export type LLMFunctionCallEventData = LLMResponseEventData
-
-export type LLMFinishEventData = {
-  response: Record<string, any>;
-}
-
-export type LLMErrorEventData = {
-  error: unknown;
-}
+  | {
+    type: "function_call_output";
+    call_id: string;
+    output: string;
+  }
 
 export type Event = {
   name: "llm.response";
-  data: LLMResponseEventData;
+  data: {
+    delta: string;
+    item_id: string;
+    output_index: number;
+  };
+} | {
+  name: "llm.request";
+  data: {
+    messages: ChatMessage[];
+  };
 } | {
   name: "llm.function_call";
-  data: LLMFunctionCallEventData;
+  data: {
+    delta?: string;
+    item_id: string;
+    output_index: number;
+    call_id: string;
+    name: string;
+    arguments: string;
+  };
 } | {
   name: "llm.error";
-  data: LLMErrorEventData;
+  data: {
+    error: unknown;
+  };
 } | {
   name: "llm.think";
-  data: LLMThinkEventData;
+  data: {
+    delta: string;
+    item_id: string;
+    output_index: number;
+    content_index: number;
+  };
 } | {
   name: "llm.finish";
-  data: LLMFinishEventData;
+  data: {
+    response: Record<string, any>;
+  };
 } | {
   name: "function.ok" | "function.error",
   data: Record<string, any>;
@@ -77,5 +92,6 @@ export type Function = {
     type: "string" | "number" | "boolean" | "object";
   }>;
   requiredParams: string[];
+  enabled: () => boolean;
   exec: (args: Record<string, any>) => Promise<Event>;
 }

@@ -2,10 +2,10 @@ import fs from "node:fs"
 import path from "node:path"
 import os from "node:os"
 import winston from "winston"
-import { appConfig as config } from "./llm/config.js"
+import { appConfig as config } from "./config.js"
 export function createLogger(): winston.Logger {
   const transports: winston.transport[] = []
-  
+
   if (config.logging.console.enabled) {
     transports.push(
       new winston.transports.Console({

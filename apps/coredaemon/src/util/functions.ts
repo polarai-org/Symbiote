@@ -1,7 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
-import type { Function as ToolFunction } from "@symbiote/types"
+import type { Function } from "@symbiote/types"
 
 const defaultFunctionsDir = path.join(process.cwd(), "src/functions")
 
@@ -35,17 +35,20 @@ function walkFunctionsDir(dir: string): string[] {
   return files
 }
 
-function getToolExport(moduleExports: Record<string, unknown>): ToolFunction | null {
-  const preferredExports = [moduleExports.default, moduleExports.tool]
+function getToolExports(moduleExports: Record<string, unknown>): Function[] {
+  const tools: Function[] = []
 
-  for (const value of preferredExports) {
-    if (
-      value &&
-      typeof value === "object" &&
-      typeof (value as ToolFunction).name === "string" &&
-      typeof (value as ToolFunction).exec === "function"
-    ) {
-      return value as ToolFunction
+  // Also check if default is an array
+  if (Array.isArray(moduleExports.default)) {
+    for (const val of moduleExports.default) {
+      if (
+        val &&
+        typeof val === "object" &&
+        typeof (val as Function).name === "string" &&
+        typeof (val as Function).exec === "function"
+      ) {
+        tools.push(val as Function)
+      }
     }
   }
 
@@ -53,22 +56,28 @@ function getToolExport(moduleExports: Record<string, unknown>): ToolFunction | n
     if (
       value &&
       typeof value === "object" &&
-      typeof (value as ToolFunction).name === "string" &&
-      typeof (value as ToolFunction).exec === "function"
+      typeof (value as Function).name === "string" &&
+      typeof (value as Function).exec === "function" &&
+      !tools.includes(value as Function)
     ) {
-      return value as ToolFunction
+      tools.push(value as Function)
     }
   }
 
-  return null
+  return tools
 }
 
-async function runFunction(filePath: string, args: Record<string, any>) {
+async function runFunction(filePath: string, functionName: string, args: Record<string, any>) {
   const moduleExports = await import(pathToFileURL(filePath).href)
-  const tool = getToolExport(moduleExports)
+  const tools = getToolExports(moduleExports)
+  const tool = tools.find(t => t.name === functionName)
 
   if (!tool) {
-    throw new Error(`No tool export found in ${filePath}`)
+    throw new Error(`Tool ${functionName} not found in ${filePath}`)
+  }
+
+  if (!tool.enabled()) {
+    throw new Error(`Tool ${functionName} is currently disabled`)
   }
 
   return tool.exec(args)
@@ -76,26 +85,28 @@ async function runFunction(filePath: string, args: Record<string, any>) {
 
 export async function getFunctions(
   functionsDir: string = defaultFunctionsDir,
-): Promise<Record<string, ToolFunction>> {
-  const functions: Record<string, ToolFunction> = {}
+): Promise<Function[]> {
+  const functions: Function[] = []
 
   for (const filePath of walkFunctionsDir(functionsDir)) {
     const moduleExports = await import(pathToFileURL(filePath).href)
-    const tool = getToolExport(moduleExports)
+    const tools = getToolExports(moduleExports)
 
-    if (!tool) {
-      continue
-    }
+    for (const tool of tools) {
+      if (functions.some((existingFunction) => existingFunction.name === tool.name)) {
+        throw new Error(`Duplicate function name: ${tool.name}`)
+      }
 
-    if (functions[tool.name]) {
-      throw new Error(`Duplicate function name: ${tool.name}`)
-    }
+      if (!tool.enabled()) {
+        continue
+      }
 
-    const { exec, ...definition } = tool
+      const { exec, ...definition } = tool
 
-    functions[tool.name] = {
-      ...definition,
-      exec: (args) => runFunction(filePath, args),
+      functions.push({
+        ...definition,
+        exec: (args: Record<string, any>) => runFunction(filePath, tool.name, args),
+      })
     }
   }
 
@@ -108,7 +119,7 @@ export async function executeFunction(
   functionsDir: string = defaultFunctionsDir,
 ) {
   const functions = await getFunctions(functionsDir)
-  const tool = functions[name]
+  const tool = functions.find((functionDefinition) => functionDefinition.name === name)
 
   if (!tool) {
     throw new Error(`Function not found: ${name}`)
