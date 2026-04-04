@@ -4,13 +4,14 @@ The symbiote for your AI agent.
 Plan:
 Please note: Cross-platform compat isnt required, just get Linux (Systemd, OpenRC and s6) working
 - [ ] Core daemon / service for AI comms (High prio)
-   - [ ] Provider agnostic interface (Take inspo from Xenon or JarvisCore)
-   - [ ] Basic model features
-   - [ ] Provider-agnostic function definitions and executions
-   - [ ] Basic memory management
+   - [x] Provider agnostic interface (Take inspo from Xenon or JarvisCore)
+   - [x] Basic model features
+   - [x] Provider-agnostic function definitions and executions
    - [ ] Skill management (loading, unloading, listing)
+   - [ ] Basic memory management
+
 - [ ] Chat interface
-(Please note, the skill for chatting should be put in the system message and not received via a function call, this is because LLMs tend to give higher attn to contents in the system channel.)
+   - [ ] TUI/CLI using Ink
    - [ ] Discord (self)bot
    - [ ] WhatsApp bot (Baileys)
    - [ ] Telegram bot
