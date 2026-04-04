@@ -20,11 +20,13 @@ export type AppConfig = {
       enabled: boolean
     }
   },
-  functions: Record<string, {
-    enabled: boolean
-    provider?: string
-    api_key?: string
-  }>;
+  functions: {
+    websearch: {
+      enabled: boolean;
+      provider: "exa-ai";
+      api_key: string;
+    }
+  }
 }
 
 export type ChatMessage =
