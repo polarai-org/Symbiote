@@ -6,6 +6,9 @@
       "path": "./apps/coredaemon"
     },
     {
+      "path": "./apps/tui"
+    },
+    {
       "path": "./packages/types"
     },
     {

@@ -1,7 +1,9 @@
 export type AppConfig = {
   coredaemon: {
-    port: number
-    host: string
+    port: number;
+    host: string;
+    enabled: boolean;
+    password: string;
   },
   llm: {
     provider_name: string
@@ -25,6 +27,12 @@ export type AppConfig = {
       enabled: boolean;
       provider: "exa-ai";
       api_key: string;
+    },
+    terminal: {
+      enabled: boolean;
+    },
+    http: {
+      enabled: boolean;
     }
   }
 }
@@ -96,4 +104,11 @@ export type Function = {
   requiredParams: string[];
   enabled: () => boolean;
   exec: (args: Record<string, any>) => Promise<Event>;
+}
+
+export type SearchResult = {
+  title: string
+  url: string
+  snippet?: string
+  published_at?: string
 }
