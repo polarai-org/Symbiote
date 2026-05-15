@@ -1,0 +1,10 @@
+.git
+.turbo
+.env*
+**/node_modules
+**/.react-router
+**/build
+**/dist
+coverage
+*.log
+.DS_Store

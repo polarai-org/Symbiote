@@ -1,4 +1,4 @@
-import { appConfig } from "../util/config.js";
+import { appConfig } from "@symbiote/config";
 import type { Function, Event } from "@symbiote/types";
 
 export const websearch: Function = {

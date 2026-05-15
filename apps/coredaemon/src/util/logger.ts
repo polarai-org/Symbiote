@@ -2,11 +2,11 @@ import fs from "node:fs"
 import path from "node:path"
 import os from "node:os"
 import winston from "winston"
-import { appConfig as config } from "./config.js"
+import { appConfig as config } from "@symbiote/config"
 export function createLogger(): winston.Logger {
   const transports: winston.transport[] = []
 
-  if (config.logging.console.enabled) {
+  if (config!.logging.console.enabled) {
     transports.push(
       new winston.transports.Console({
         format: winston.format.combine(
@@ -20,8 +20,8 @@ export function createLogger(): winston.Logger {
     )
   }
 
-  if (config.logging.logfile.enabled) {
-    let filename = config.logging.logfile.path
+  if (config!.logging.logfile.enabled) {
+    let filename = config!.logging.logfile.path
 
     if (filename.startsWith("~")) {
       filename = path.join(os.homedir(), filename.slice(1))

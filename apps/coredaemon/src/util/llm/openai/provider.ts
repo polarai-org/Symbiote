@@ -1,7 +1,7 @@
 import { ChatMessage, Event, Function } from "@symbiote/types";
 import { LLMProvider, LLMProviderConfig } from "../provider.js";
 import OpenAI from "openai";
-import { appConfig } from "../../config.js";
+import { appConfig } from "@symbiote/config";
 
 function toOAIResponsesInput(messages: ChatMessage[]) {
   return messages.map((message) => {

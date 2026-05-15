@@ -32,6 +32,14 @@ type IncomingEvent =
     }
   }
   | {
+    name: "llm.client_function_call"
+    data: {
+      call_id: string
+      name: string
+      arguments: Record<string, any>
+    }
+  }
+  | {
     name: "function.ok" | "function.error"
     data: Record<string, any>
   }
@@ -97,6 +105,11 @@ function printToolCall(event: Extract<IncomingEvent, { name: "llm.function_call"
   } catch {
     console.log(`   args: ${event.data.arguments}`)
   }
+}
+
+function printClientToolCall(event: Extract<IncomingEvent, { name: "llm.client_function_call" }>) {
+  console.log(`\n${color.tool}🖥️ Client-side tool needed:${color.reset} ${event.data.name}`)
+  console.log(`   args: ${JSON.stringify(event.data.arguments, null, 2)}`)
 }
 
 function printToolResult(event: Extract<IncomingEvent, { name: "function.ok" | "function.error" }>) {
@@ -180,6 +193,9 @@ ws.on("message", (data) => {
       break
     case "llm.function_call":
       printToolCall(event)
+      break
+    case "llm.client_function_call":
+      printClientToolCall(event)
       break
     case "function.ok":
     case "function.error":

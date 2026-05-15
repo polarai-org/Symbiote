@@ -3,7 +3,9 @@ export type AppConfig = {
     port: number;
     host: string;
     enabled: boolean;
-    password: string;
+    allow_signups: boolean;
+    encryption_secret: string;
+    db_path: string;
   },
   llm: {
     provider_name: string
@@ -92,6 +94,18 @@ export type Event = {
 } | {
   name: "function.ok" | "function.error",
   data: Record<string, any>;
+} | {
+  name: "llm.client_function_call";
+  data: {
+    name: string;
+    arguments: Record<string, any>;
+    call_id: string;
+  }
+} | {
+  name: "symbiote.error";
+  data: {
+    error: string;
+  }
 }
 
 export type Function = {

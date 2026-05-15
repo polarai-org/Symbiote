@@ -1,6 +1,6 @@
 import { spawn, ChildProcess } from "node:child_process"
 import type { Function } from "@symbiote/types"
-import { appConfig } from "../../util/config.js";
+import { appConfig } from "@symbiote/config";
 
 const activeTerminals = new Map<string, {
   process: ChildProcess;

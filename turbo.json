@@ -11,7 +11,9 @@
         ".env*"
       ],
       "outputs": [
-        "dist/**"
+        "dist/**",
+        "build/**",
+        ".react-router/types/**"
       ]
     },
     "lint": {

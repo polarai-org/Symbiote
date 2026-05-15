@@ -1,5 +1,5 @@
 import { Function, Event } from "@symbiote/types";
-import { appConfig } from "../util/config.js";
+import { appConfig } from "@symbiote/config";
 
 export const http: Function = {
   name: "http",

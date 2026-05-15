@@ -6,7 +6,13 @@
       "path": "./apps/coredaemon"
     },
     {
-      "path": "./apps/tui"
+      "path": "./apps/web"
+    },
+    {
+      "path": "./packages/database"
+    },
+    {
+      "path": "./packages/config"
     },
     {
       "path": "./packages/types"
