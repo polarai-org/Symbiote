@@ -11,8 +11,7 @@ Please note: Cross-platform compat isnt required, just get Linux (Systemd, OpenR
    - [ ] Basic memory management
 
 - [ ] Chat interface
-   - [ ] TUI/CLI using Ink
+   - [ ] Web app
    - [ ] Discord (self)bot
    - [ ] WhatsApp bot (Baileys)
    - [ ] Telegram bot
-   - [ ] Optional API or web UI

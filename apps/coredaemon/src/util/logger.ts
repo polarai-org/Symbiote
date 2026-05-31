@@ -2,7 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import os from "node:os"
 import winston from "winston"
-import { appConfig as config } from "@symbiote/config"
+import { appConfig as config, getConfigDir } from "@symbiote/config"
 export function createLogger(): winston.Logger {
   const transports: winston.transport[] = []
 
@@ -25,6 +25,10 @@ export function createLogger(): winston.Logger {
 
     if (filename.startsWith("~")) {
       filename = path.join(os.homedir(), filename.slice(1))
+    }
+
+    if (!path.isAbsolute(filename)) {
+      filename = path.join(getConfigDir(), filename)
     }
 
     const now = new Date()

@@ -4,6 +4,7 @@ export const baseConfig = `{
     "host": "127.0.0.1",
     "enabled": true,
     "db_path": "symbiote.db",
+    "encryption_secret": "DONT_FORGET_TO_REPLACE_ME_PLS",
     "allow_signups": true // Use this only for registering the first account. Highly recommended to disable after the initial setup for security reasons.
   },
   "llm": {
@@ -16,7 +17,7 @@ export const baseConfig = `{
   "logging": {
     "logfile": {
       "enabled": true,
-      "path": "logs/coredaemon.log"
+      "path": "logs/{dd-mm-yyyy}.log"
     },
     "console": {
       "enabled": true

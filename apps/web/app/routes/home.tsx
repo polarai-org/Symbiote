@@ -1,13 +1,24 @@
-import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { redirect } from "react-router"
+import type { Route } from "./+types/home"
+import { getCurrentSession } from "../lib/auth.server"
 
-export function meta({}: Route.MetaArgs) {
+export function meta({ }: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
-  ];
+    { title: "Symbiote" },
+    { name: "description", content: "Sign in to Symbiote" },
+  ]
+}
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const session = await getCurrentSession(request)
+
+  if (session) {
+    throw redirect("/app")
+  }
+
+  throw redirect("/auth/sign-in")
 }
 
 export default function Home() {
-  return <Welcome />;
+  return null
 }
