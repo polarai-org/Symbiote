@@ -64,7 +64,7 @@ export default function SignUp() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 text-neutral-50">
+    <main className="flex min-h-screen items-center justify-center px-6 text-neutral-50">
       <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-sm">
         <div className="space-y-2 text-center">
           <p className="text-sm font-medium uppercase tracking-[0.24em] text-neutral-400">

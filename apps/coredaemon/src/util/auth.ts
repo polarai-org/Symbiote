@@ -23,15 +23,12 @@ function getSecret() {
 export const auth = betterAuth({
   baseURL: getAuthBaseURL(),
   secret: getSecret(),
-  trustedOrigins:
-    process.env.NODE_ENV === "production"
-      ? undefined
-      : ["http://localhost:*", "http://*.localhost:*", "http://127.0.0.1:*"],
+  trustedOrigins: ["*"],
   database: prismaAdapter(prisma, {
     provider: "sqlite",
   }),
   emailAndPassword: {
     enabled: true,
-    disableSignUp: !appConfig!.coredaemon.allow_signups,
+    disableSignUp: !appConfig!.coredaemon.allow_signup,
   },
 })

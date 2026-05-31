@@ -23,12 +23,39 @@ export function getCoreDaemonOrigin() {
   return `http://${resolveCoreDaemonHost(host)}:${port}`
 }
 
+export function getCoreDaemonPublicOrigin() {
+  const publicUrl = appConfig!.coredaemon.public_url?.trim()
+
+  if (publicUrl) {
+    return publicUrl
+  }
+
+  return getCoreDaemonOrigin()
+}
+
+export function getCoreDaemonWebsocketURL() {
+  const publicOrigin = getCoreDaemonPublicOrigin()
+  const url = new URL(publicOrigin)
+
+  if (url.protocol === "https:") {
+    url.protocol = "wss:"
+  } else if (url.protocol === "http:") {
+    url.protocol = "ws:"
+  }
+
+  if (!url.pathname || url.pathname === "/") {
+    url.pathname = "/ws"
+  }
+
+  return url.toString()
+}
+
 export function getCoreDaemonAuthBaseURL() {
   return `${getCoreDaemonOrigin()}/api/auth`
 }
 
 export function isSignupEnabled() {
-  return appConfig!.coredaemon.allow_signups
+  return appConfig!.coredaemon.allow_signup
 }
 
 export async function getCurrentSession(

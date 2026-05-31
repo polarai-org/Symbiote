@@ -2,10 +2,11 @@ export const baseConfig = `{
   "coredaemon": {
     "port": 3000,
     "host": "127.0.0.1",
+    "public_url": "http://127.0.0.1:3000",
     "enabled": true,
     "db_path": "symbiote.db",
     "encryption_secret": "DONT_FORGET_TO_REPLACE_ME_PLS",
-    "allow_signups": true // Use this only for registering the first account. Highly recommended to disable after the initial setup for security reasons.
+    "allow_signup": true // Use this only for registering the first account. Highly recommended to disable after the initial setup for security reasons.
   },
   "llm": {
     "provider_name": "openai",

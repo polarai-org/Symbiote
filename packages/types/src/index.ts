@@ -3,7 +3,7 @@ export type AppConfig = {
     port: number;
     host: string;
     public_url: string;
-    allow_signups: boolean;
+    allow_signup: boolean;
     encryption_secret: string;
     db_path: string;
   },
@@ -43,13 +43,21 @@ export type ChatMessage =
   | {
     role: "system" | "developer" | "user" | "assistant";
     content: string;
+    reasoning?: string;
     name?: string
   }
   | {
     type: "function_call_output";
     call_id: string;
-    output: string;
+      output: string;
   }
+
+export type ConversationSummary = {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export type Event = {
   name: "llm.response";
@@ -106,6 +114,22 @@ export type Event = {
   data: {
     error: string;
   }
+} | {
+  name: "conversation.switch";
+  data: {
+    id: string;
+  }
+} | {
+  name: "conversation.fetch";
+  data: {
+    id: string;
+    conversation?: Conversation;
+  }
+} | {
+  name: "conversations.list";
+  data?: {
+    conversations: ConversationSummary[];
+  }
 }
 
 export type Function = {
@@ -118,4 +142,12 @@ export type Function = {
   requiredParams: string[];
   enabled: () => boolean;
   exec: (args: Record<string, any>) => Promise<Event>;
+}
+
+export type Conversation = {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: string;
+  updatedAt: string;
 }

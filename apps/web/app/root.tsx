@@ -5,11 +5,20 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import { SCDPProvider } from "./lib/scdp";
+import { getCoreDaemonWebsocketURL } from "./lib/auth.server";
+import { TooltipProvider } from "./components/ui/tooltip";
 import "./app.css";
+
+export function loader() {
+  return {
+    scdpWebsocketUrl: getCoreDaemonWebsocketURL(),
+  };
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -33,7 +42,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="bg-neutral-950 font-sans text-neutral-50 antialiased">
+      <body className="font-sans text-neutral-50 antialiased">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -43,9 +52,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const { scdpWebsocketUrl } = useLoaderData<typeof loader>();
+
   return (
-    <SCDPProvider>
-      <Outlet />
+    <SCDPProvider websocketUrl={scdpWebsocketUrl}>
+      <TooltipProvider>
+        <Outlet />
+      </TooltipProvider>
     </SCDPProvider>
   )
 }
