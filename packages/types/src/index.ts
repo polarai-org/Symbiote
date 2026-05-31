@@ -120,10 +120,29 @@ export type Event = {
     id: string;
   }
 } | {
+  name: "conversation.open";
+  data: {
+    id: string;
+    create?: boolean;
+    conversation?: Conversation;
+  }
+} | {
   name: "conversation.fetch";
   data: {
     id: string;
     conversation?: Conversation;
+  }
+} | {
+  name: "conversation.rename";
+  data: {
+    id: string;
+    title: string;
+    conversation?: ConversationSummary;
+  }
+} | {
+  name: "conversation.delete";
+  data: {
+    id: string;
   }
 } | {
   name: "conversations.list";

@@ -1,66 +1,32 @@
 import { appConfig } from "@symbiote/config"
-
-export type AuthSession = {
-  session: Record<string, unknown>
-  user: {
-    id: string
-    name: string
-    email: string
-    image?: string | null
-  }
-}
-
-function resolveCoreDaemonHost(host: string) {
-  if (host === "0.0.0.0" || host === "::") {
-    return "127.0.0.1"
-  }
-
-  return host
-}
-
-export function getCoreDaemonOrigin() {
-  const { host, port } = appConfig!.coredaemon
-  return `http://${resolveCoreDaemonHost(host)}:${port}`
-}
-
-export function getCoreDaemonPublicOrigin() {
-  const publicUrl = appConfig!.coredaemon.public_url?.trim()
-
-  if (publicUrl) {
-    return publicUrl
-  }
-
-  return getCoreDaemonOrigin()
-}
-
-export function getCoreDaemonWebsocketURL() {
-  const publicOrigin = getCoreDaemonPublicOrigin()
-  const url = new URL(publicOrigin)
-
-  if (url.protocol === "https:") {
-    url.protocol = "wss:"
-  } else if (url.protocol === "http:") {
-    url.protocol = "ws:"
-  }
-
-  if (!url.pathname || url.pathname === "/") {
-    url.pathname = "/ws"
-  }
-
-  return url.toString()
-}
-
-export function getCoreDaemonAuthBaseURL() {
-  return `${getCoreDaemonOrigin()}/api/auth`
-}
+import type { authClient } from "./auth-client"
 
 export function isSignupEnabled() {
-  return appConfig!.coredaemon.allow_signup
+	return appConfig?.coredaemon.allow_signup ?? false
+}
+
+// export function getCoreDaemonOrigin() {
+//   const { host, port } = appConfig!.coredaemon
+//   return `http://${host}:${port}`
+// }
+
+// export function getCoreDaemonPublicOrigin() {
+//   const publicUrl = appConfig!.coredaemon.public_url?.trim()
+
+//   if (publicUrl) {
+//     return publicUrl
+//   }
+
+//   return getCoreDaemonOrigin()
+// }
+
+export function getCoreDaemonAuthBaseURL() {
+  return `${appConfig!.coredaemon.public_url?.trim()}/api/auth`
 }
 
 export async function getCurrentSession(
   request: Request,
-): Promise<AuthSession | null> {
+): Promise<typeof authClient.$Infer.Session | null> {
   try {
     const headers = new Headers(request.headers)
     headers.delete("host")
@@ -76,7 +42,7 @@ export async function getCurrentSession(
       return null
     }
 
-    return (await response.json()) as AuthSession | null
+    return (await response.json()) as typeof authClient.$Infer.Session | null
   } catch {
     return null
   }
@@ -85,7 +51,7 @@ export async function getCurrentSession(
 export async function proxyAuthRequest(request: Request): Promise<Response> {
   const url = new URL(request.url)
   const targetPath = url.pathname.replace(/^\/api\/auth/, "/api/auth")
-  const targetURL = new URL(`${targetPath}${url.search}`, getCoreDaemonOrigin())
+  const targetURL = new URL(`${targetPath}${url.search}`, appConfig!.coredaemon.public_url?.trim())
 
   const headers = new Headers(request.headers)
   headers.delete("host")

@@ -10,13 +10,13 @@ import {
 
 import type { Route } from "./+types/root";
 import { SCDPProvider } from "./lib/scdp";
-import { getCoreDaemonWebsocketURL } from "./lib/auth.server";
 import { TooltipProvider } from "./components/ui/tooltip";
 import "./app.css";
+import { appConfig } from "@symbiote/config";
 
 export function loader() {
   return {
-    scdpWebsocketUrl: getCoreDaemonWebsocketURL(),
+    scdpWebsocketUrl: appConfig!.coredaemon.public_url?.trim() + "/ws",
   };
 }
 

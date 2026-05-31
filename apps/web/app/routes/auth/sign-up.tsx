@@ -4,8 +4,9 @@ import { Link, redirect, useNavigate } from "react-router"
 import type { Route } from "./+types/sign-up"
 import { Button, Input } from "@polarnl/polarui-react"
 import { authClient } from "../../lib/auth-client"
-import { getCurrentSession, isSignupEnabled } from "../../lib/auth.server"
+import { getCurrentSession } from "../../lib/auth.server"
 import { ArrowRight, Loader2, Lock, Mail, User } from "lucide-react"
+import { appConfig } from "@symbiote/config"
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -21,7 +22,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     throw redirect("/app")
   }
 
-  if (!isSignupEnabled()) {
+  if (appConfig!.coredaemon.allow_signup === false) {
     throw redirect("/auth/sign-in")
   }
 

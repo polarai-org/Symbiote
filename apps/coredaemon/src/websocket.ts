@@ -29,13 +29,19 @@ type ConversationStore = {
   ensureConversation: (userId: string, conversationId: string) => Promise<void>
   listConversations: (userId: string) => Promise<ConversationSummary[]>
   getConversation: (userId: string, conversationId: string) => Promise<Conversation | null>
+  openConversation: (userId: string, conversationId: string, create?: boolean) => Promise<Conversation | null>
+  renameConversation: (userId: string, conversationId: string, title: string) => Promise<ConversationSummary | null>
+  deleteConversation: (userId: string, conversationId: string) => Promise<boolean>
   loadMessages: (userId: string, conversationId: string) => Promise<ChatMessage[]>
   appendMessages: (userId: string, conversationId: string, messages: ChatMessage[]) => Promise<void>
 }
 
 type IncomingWebsocketEvent =
+  | { name: "conversation.open"; data: { id: string; create?: boolean } }
   | { name: "conversation.switch"; data: { id: string } }
   | { name: "conversation.fetch"; data: { id: string } }
+  | { name: "conversation.rename"; data: { id: string; title: string } }
+  | { name: "conversation.delete"; data: { id: string } }
   | { name: "conversations.list"; data?: undefined }
   | { name: "llm.request"; data: { messages: ChatMessage[] } }
 
@@ -132,6 +138,55 @@ const prismaConversationStore: ConversationStore = {
       ...serializeConversationSummary(conversation),
       messages: conversation.messages.map((message) => parseStoredMessage(message.payload)),
     }
+  },
+
+  async openConversation(userId, conversationId, create = false) {
+    if (create) {
+      await prismaConversationStore.ensureConversation(userId, conversationId)
+    }
+
+    return prismaConversationStore.getConversation(userId, conversationId)
+  },
+
+  async renameConversation(userId, conversationId, title) {
+    const trimmedTitle = title.trim()
+
+    if (!trimmedTitle) {
+      return null
+    }
+
+    const conversation = await prisma.conversation.update({
+      where: {
+        userId_id: {
+          userId,
+          id: conversationId,
+        },
+      },
+      data: {
+        title: trimmedTitle,
+      },
+      select: {
+        id: true,
+        title: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }).catch(() => null)
+
+    return conversation ? serializeConversationSummary(conversation) : null
+  },
+
+  async deleteConversation(userId, conversationId) {
+    const result = await prisma.conversation.delete({
+      where: {
+        userId_id: {
+          userId,
+          id: conversationId,
+        },
+      },
+    }).catch(() => null)
+
+    return !!result
   },
 
   async loadMessages(userId, conversationId) {
@@ -243,6 +298,29 @@ function isIncomingWebsocketEvent(payload: unknown): payload is IncomingWebsocke
 
   const event = payload as { name: string; data?: unknown }
   if (event.name === "conversation.switch" || event.name === "conversation.fetch") {
+    return !!event.data && typeof (event.data as { id?: unknown }).id === "string"
+  }
+
+  if (event.name === "conversation.open") {
+    return (
+      !!event.data &&
+      typeof (event.data as { id?: unknown }).id === "string" &&
+      (
+        (event.data as { create?: unknown }).create === undefined ||
+        typeof (event.data as { create?: unknown }).create === "boolean"
+      )
+    )
+  }
+
+  if (event.name === "conversation.rename") {
+    return (
+      !!event.data &&
+      typeof (event.data as { id?: unknown }).id === "string" &&
+      typeof (event.data as { title?: unknown }).title === "string"
+    )
+  }
+
+  if (event.name === "conversation.delete") {
     return !!event.data && typeof (event.data as { id?: unknown }).id === "string"
   }
 
@@ -440,9 +518,16 @@ export function registerWSRoute(
   fastify.get("/ws", { websocket: true, preValidation: customAuthenticateUpgrade ?? authenticateUpgrade }, (socket, request) => {
     let activeConversationId: string | null = null
     let activeResponse = false
+    let messageQueue: Promise<void> = Promise.resolve()
+
+    function enqueue(fn: () => Promise<void>): void {
+      messageQueue = messageQueue.then(fn).catch((err) => {
+        logger.error(`Unhandled error in message queue: ${err}`)
+      })
+    }
 
     socket.on("message", (message) => {
-      void (async () => {
+      enqueue(async () => {
         let userId: string | null
 
         if (getUserId) {
@@ -459,7 +544,7 @@ export function registerWSRoute(
 
         let parsedPayload: unknown
 
-      try {
+        try {
           parsedPayload = JSON.parse(message?.toString() ?? "")
         } catch {
           sendError(socket, "Invalid JSON payload")
@@ -500,6 +585,42 @@ export function registerWSRoute(
           return
         }
 
+        if (parsedPayload.name === "conversation.open") {
+          if (activeResponse) {
+            sendError(socket, "Cannot switch conversations while a response is in progress")
+            return
+          }
+
+          const conversation = await conversationStore.openConversation(
+            userId,
+            parsedPayload.data.id,
+            parsedPayload.data.create,
+          )
+
+          if (!conversation) {
+            sendError(socket, "Conversation not found")
+            return
+          }
+
+          activeConversationId = conversation.id
+          socket.send(JSON.stringify({
+            name: "conversation.open",
+            data: {
+              id: conversation.id,
+              conversation,
+            },
+          } satisfies Extract<Event, { name: "conversation.open" }>))
+
+          const conversations = await conversationStore.listConversations(userId)
+          socket.send(JSON.stringify({
+            name: "conversations.list",
+            data: {
+              conversations,
+            },
+          } satisfies Extract<Event, { name: "conversations.list" }>))
+          return
+        }
+
         if (parsedPayload.name === "conversation.switch") {
           if (activeResponse) {
             sendError(socket, "Cannot switch conversations while a response is in progress")
@@ -508,6 +629,66 @@ export function registerWSRoute(
 
           await conversationStore.ensureConversation(userId, parsedPayload.data.id)
           activeConversationId = parsedPayload.data.id
+          return
+        }
+
+        if (parsedPayload.name === "conversation.rename") {
+          const conversation = await conversationStore.renameConversation(
+            userId,
+            parsedPayload.data.id,
+            parsedPayload.data.title,
+          )
+
+          if (!conversation) {
+            sendError(socket, "Conversation not found")
+            return
+          }
+
+          socket.send(JSON.stringify({
+            name: "conversation.rename",
+            data: {
+              id: conversation.id,
+              title: conversation.title,
+              conversation,
+            },
+          } satisfies Extract<Event, { name: "conversation.rename" }>))
+
+          const conversations = await conversationStore.listConversations(userId)
+          socket.send(JSON.stringify({
+            name: "conversations.list",
+            data: {
+              conversations,
+            },
+          } satisfies Extract<Event, { name: "conversations.list" }>))
+          return
+        }
+
+        if (parsedPayload.name === "conversation.delete") {
+          const deleted = await conversationStore.deleteConversation(userId, parsedPayload.data.id)
+
+          if (!deleted) {
+            sendError(socket, "Conversation not found")
+            return
+          }
+
+          if (activeConversationId === parsedPayload.data.id) {
+            activeConversationId = null
+          }
+
+          socket.send(JSON.stringify({
+            name: "conversation.delete",
+            data: {
+              id: parsedPayload.data.id,
+            },
+          } satisfies Extract<Event, { name: "conversation.delete" }>))
+
+          const conversations = await conversationStore.listConversations(userId)
+          socket.send(JSON.stringify({
+            name: "conversations.list",
+            data: {
+              conversations,
+            },
+          } satisfies Extract<Event, { name: "conversations.list" }>))
           return
         }
 
@@ -549,9 +730,6 @@ export function registerWSRoute(
         } finally {
           activeResponse = false
         }
-      })().catch((err) => {
-        logger.error(`Error processing websocket message: ${err}`)
-        sendError(socket, "Error processing websocket message")
       })
     })
   })
