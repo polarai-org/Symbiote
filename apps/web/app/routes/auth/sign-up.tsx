@@ -1,9 +1,11 @@
-import type { FormEvent } from "react"
+import type { ChangeEvent, FormEvent } from "react"
 import { useState } from "react"
 import { Link, redirect, useNavigate } from "react-router"
 import type { Route } from "./+types/sign-up"
+import { Button, Input } from "@polarnl/polarui-react"
 import { authClient } from "../../lib/auth-client"
 import { getCurrentSession, isSignupEnabled } from "../../lib/auth.server"
+import { ArrowRight, Loader2, Lock, Mail, User } from "lucide-react"
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -62,90 +64,84 @@ export default function SignUp() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
-      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center">
-        <section className="w-full rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-              Symbiote
+    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 text-neutral-50">
+      <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-sm">
+        <div className="space-y-2 text-center">
+          <p className="text-sm font-medium uppercase tracking-[0.24em] text-neutral-400">
+            Symbiote
+          </p>
+          <h1 className="text-2xl font-semibold">Create account</h1>
+          <p className="text-sm text-neutral-400">Enter a name, email, and password.</p>
+        </div>
+
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-neutral-200">Name</span>
+            <Input
+              scheme="dark"
+              icon={<User />}
+              type="text"
+              autoComplete="name"
+              placeholder="Ada Lovelace"
+              value={name}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setName(event.target.value)}
+              required
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-neutral-200">Email</span>
+            <Input
+              scheme="dark"
+              icon={<Mail />}
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setEmail(event.target.value)}
+              required
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-neutral-200">Password</span>
+            <Input
+              scheme="dark"
+              icon={<Lock />}
+              type="password"
+              autoComplete="new-password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setPassword(event.target.value)}
+              required
+              minLength={8}
+            />
+          </label>
+
+          {error ? (
+            <p className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100" role="alert">
+              {error}
             </p>
-            <h1 className="text-3xl font-semibold">Create the first account</h1>
-            <p className="text-sm leading-6 text-slate-600">
-              Pick a name, email, and password to unlock the workspace.
-            </p>
+          ) : null}
+
+          <Button
+            color="sky"
+            textColor="black"
+            className="w-full"
+            type="submit"
+            disabled={submitting}
+            icon={submitting ? <Loader2 className="animate-spin" /> : <ArrowRight />}
+          >
+            {submitting ? "Creating account…" : "Create account"}
+          </Button>
+
+          <div className="pt-2 text-center text-sm text-neutral-400">
+            Already have an account?{" "}
+            <Link className="text-sky-200 underline-offset-4 hover:underline" to="/auth/sign-in">
+              Sign in
+            </Link>
           </div>
-
-          <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Name</span>
-              <input
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-slate-900"
-                type="text"
-                autoComplete="name"
-                placeholder="Ada Lovelace"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                required
-              />
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Email</span>
-              <input
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-slate-900"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">
-                Password
-              </span>
-              <input
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-slate-900"
-                type="password"
-                autoComplete="new-password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                minLength={8}
-              />
-            </label>
-
-            {error ? (
-              <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {error}
-              </p>
-            ) : null}
-
-            <button
-              className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-              type="submit"
-              disabled={submitting}
-            >
-              {submitting ? "Creating account…" : "Create account"}
-            </button>
-          </form>
-
-          <div className="mt-6 border-t border-slate-200 pt-6 text-sm text-slate-600">
-            <p>
-              Already set up?{" "}
-              <Link
-                className="font-medium text-slate-900 underline"
-                to="/auth/sign-in"
-              >
-                Back to sign in
-              </Link>
-              .
-            </p>
-          </div>
-        </section>
+        </form>
       </div>
     </main>
   )

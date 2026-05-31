@@ -2,7 +2,7 @@ export type AppConfig = {
   coredaemon: {
     port: number;
     host: string;
-    enabled: boolean;
+    public_url: string;
     allow_signups: boolean;
     encryption_secret: string;
     db_path: string;
@@ -118,11 +118,4 @@ export type Function = {
   requiredParams: string[];
   enabled: () => boolean;
   exec: (args: Record<string, any>) => Promise<Event>;
-}
-
-export type SearchResult = {
-  title: string
-  url: string
-  snippet?: string
-  published_at?: string
 }

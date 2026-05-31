@@ -15,8 +15,8 @@
   },
   "scripts": {
     "generate": "prisma generate",
-    "prebuild": "pnpm run generate",
-    "build": "tsc -p tsconfig.json",
+    "prepare": "pnpm run generate && pnpm exec prisma db push --accept-data-loss",
+    "build": "pnpm run prepare && tsc -p tsconfig.json",
     "precheck-types": "pnpm run generate",
     "check-types": "tsc --noEmit -p tsconfig.json"
   },

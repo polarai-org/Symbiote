@@ -1,6 +1,5 @@
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
-import { bearer } from "better-auth/plugins"
 import { prisma } from "@symbiote/db"
 import { appConfig } from "@symbiote/config"
 import { createLogger } from "./logger.js"
@@ -35,5 +34,4 @@ export const auth = betterAuth({
     enabled: true,
     disableSignUp: !appConfig!.coredaemon.allow_signups,
   },
-  plugins: [bearer()],
 })
